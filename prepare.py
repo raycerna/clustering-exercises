@@ -134,7 +134,7 @@ def prep_zillow(df):
     #df = df.set_index('parcelid')
     
     return df
-#--------------------------------------------------------------------------------------------------|#
+############################################################################################
 
 def describe_data(df):
     '''
@@ -188,7 +188,8 @@ def describe_data(df):
             print(f'Range of Values: [{df[col].min()} - {df[col].max()}] \n')
         print('------------------------------------------')
         print('--------------------------------------')
-#--------------------------------------------------------------------------------------------------|#        
+############################################################################################   
+    
 def nulls_by_col(df):
     '''
     This function  takes in a dataframe of observations and attributes(or columns)
@@ -203,7 +204,7 @@ def nulls_by_col(df):
                                  'percent_rows_missing': prcnt_miss})\
     .sort_values(by='percent_rows_missing', ascending=False)
     return cols_missing.applymap(lambda x: f"{x:0.1f}")
-#--------------------------------------------------------------------------------------------------|#
+############################################################################################
 def nulls_by_row(df):
     '''
     This function takes in a dataframe and returns a dataframe with 3 columns:
@@ -219,5 +220,4 @@ def nulls_by_row(df):
     .rename(index=str, columns={'index': 'num_rows'}).reset_index().set_index('num_cols_missing')\
     .sort_values(by='percent_cols_missing', ascending=False)
     return rows_missing
-#--------------------------------------------------------------------------------------------------|#
-#--------------------------------------------------------------------------------------------------|#   
+############################################################################################ 
