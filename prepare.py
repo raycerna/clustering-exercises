@@ -2,6 +2,31 @@ from collections import Counter
 import pandas as pd
 import numpy as np
 from datetime import date
+import matplotlib.pyplot as plt
+import math
+
+from sklearn import metrics
+
+from sklearn.model_selection import train_test_split
+from sklearn.impute import SimpleImputer
+
+
+#########################################################################################
+def split_zillow_data(df):
+    '''
+    This function performs split on zillow data.
+    Returns train, validate, and test dfs.
+    '''
+    train_validate, test = train_test_split(df, test_size=.2, 
+                                        random_state=123)
+    train, validate = train_test_split(train_validate, test_size=.3, 
+                                   random_state=123)
+
+    print('Train: %d rows, %d cols' % train.shape)
+    print('Validate: %d rows, %d cols' % validate.shape)
+    print('Test: %d rows, %d cols' % test.shape)
+    return train, validate, test
+
 ##########################################################################################
 def handle_missing_values(df, prop_required_column=0.5 , prop_required_row=0.5):
     '''
@@ -68,7 +93,6 @@ def remove_outliers(df, k, col_list):
 
 def prep_zillow(df):
     '''
-    Multifaceted Data preparation broken down by codecomments
     Returns clean dataframe
     '''
     df = data_prep(df)    
@@ -132,62 +156,12 @@ def prep_zillow(df):
     df = remove_outliers(df, 3, ['lotsizesquarefeet', 'structuretaxvaluedollarcnt', 'taxvaluedollarcnt',
                                 'landtaxvaluedollarcnt', 'taxamount', 'calculatedfinishedsquarefeet']) 
     #df = df.set_index('parcelid')
-    
-    return df
-############################################################################################
+    df['county'] = np.where(df.fips == 6037, 'Los Angeles', np.where(df.fips == 6059, 'Orange','Ventura') )
+    #df = df.drop(columns = ‘fips’)
 
-def describe_data(df):
-    '''
-    This function takes in a pandas dataframe and prints out the shape,
-    datatypes, number of missing values, columns and their data types,
-    summary statistics of numeric columns in the dataframe, as well as
-    the value counts for categorical variables.
-    '''
-    # Print out the "shape" of our dataframe - rows and columns
-    print(f'This dataframe has {df.shape[0]} rows and {df.shape[1]} columns.')
-    print('')
-    print('--------------------------------------')
-    print('--------------------------------------')    
-    # print the datatypes and column names with non-null counts
-    print(df.info())
-    print('')
-    print('--------------------------------------')
-    print('--------------------------------------')    
-    # print out summary stats for our dataset
-    print('Here are the summary statistics of our dataset')
-    print(df.describe().applymap(lambda x: f"{x:0.3f}"))
-    print('')
-    print('--------------------------------------')
-    print('--------------------------------------')
-    # print the number of missing values per column and the total
-    print('Null Values by Column: ')
-    missing_total = df.isnull().sum().sum()
-    missing_count = df.isnull().sum() # the count of missing values
-    value_count = df.isnull().count() # the count of all values
-    missing_percentage = round(missing_count / value_count * 100, 2) # percentage of missing values
-    missing_df = pd.DataFrame({'count': missing_count, 'percentage': missing_percentage})\
-    .sort_values(by='percentage', ascending=False)    
-    print(missing_df.head(50))
-    print(f' \n Total Number of Missing Values: {missing_total} \n')
-    df_total = df[df.columns[:]].count().sum()
-    proportion_of_nulls = round((missing_total / df_total), 4)
-    print(f' Proportion of Nulls in Dataframe: {proportion_of_nulls}\n') 
-    print('--------------------------------------')
-    print('--------------------------------------')    
-    print('Row-by-Row Nulls')
-    print(nulls_by_row(df))
-    print('----------------------')
-    print('Relative Frequencies: \n')
-    # Display top 5 values of each variable within reasonable limit
-    limit = 25
-    for col in df.columns:
-        if df[col].nunique() < limit:
-            print(f'Column: {col} \n {round(df[col].value_counts(normalize=True).nlargest(5), 3)} \n')
-        else: 
-            print(f'Column: {col} \n')
-            print(f'Range of Values: [{df[col].min()} - {df[col].max()}] \n')
-        print('------------------------------------------')
-        print('--------------------------------------')
+    return df
+    
+
 ############################################################################################   
     
 def nulls_by_col(df):
@@ -221,3 +195,53 @@ def nulls_by_row(df):
     .sort_values(by='percent_cols_missing', ascending=False)
     return rows_missing
 ############################################################################################ 
+
+def overview(df):
+    print('--- Shape: {}'.format(df.shape))
+    print('--- Info')
+    df.info()
+    print('--- Column Descriptions')
+    print(df.describe(include='all'))
+############################################################################################
+
+def percentage_stacked_plot(columns_to_plot, title, prep_zillow):
+    
+    '''
+    Returns a 100% stacked plot of the response variable for independent variable of the list columns_to_plot.
+    Parameters: columns_to_plot (list of string): Names of the variables to plot
+    '''
+    
+    number_of_columns = 2
+    number_of_rows = math.ceil(len(columns_to_plot)/2)
+
+    # create a figure
+    fig = plt.figure(figsize=(12, 5 * number_of_rows)) 
+    fig.suptitle(title, fontsize=22,  y=.95)
+ 
+
+    # loop to each column name to create a subplot
+    for index, column in enumerate(columns_to_plot, 1):
+
+        # create the subplot
+        ax = fig.add_subplot(number_of_rows, number_of_columns, index)
+
+        # calculate the percentage of observations of the response variable for each group of the independent variable
+        # 100% stacked bar plot
+        prop_by_independent = pd.crosstab(prep_zillow[column], prep_zillow['logerror']).apply(lambda x: x/x.sum()*100, axis=1)
+
+        prop_by_independent.plot(kind='bar', ax=ax, stacked=True,
+                                 rot=0, color=['#94bad4','#ebb086'])
+
+        # set the legend in the upper right corner
+        ax.legend(loc="upper right", bbox_to_anchor=(0.62, 0.5, 0.5, 0.5),
+                  title='LogError', fancybox=True)
+
+        # eliminate the frame from the plot
+        spine_names = ('top', 'right', 'bottom', 'left')
+        for spine_name in spine_names:
+            ax.spines[spine_name].set_visible(False)
+
+    return percentage_stacked_plot
+
+
+###
