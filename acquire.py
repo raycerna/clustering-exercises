@@ -5,9 +5,16 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import math
+
+from sklearn import metrics
+
+from sklearn.model_selection import train_test_split
+from sklearn.impute import SimpleImputer
 
 from env import host, username, password
 
+############################################################################################
 
 # SQL CONNECTION
 def get_db_url(db_name):
@@ -22,7 +29,7 @@ def get_db_url(db_name):
     url = f'mysql+pymysql://{username}:{password}@{host}/{db_name}'
     return (url)
 
-    
+############################################################################################    
 
 # ACQUIRE
 def get_zillow_data():
@@ -96,6 +103,8 @@ WHERE prop.latitude IS NOT NULL
 
     return df
 
+############################################################################################
+
 def overview(df):
     print('--- Shape: {}'.format(df.shape))
     print('--- Info')
@@ -124,7 +133,7 @@ def handle_missing_values(df, prop_required_column, prop_required_row):
     df = df[rows_missing.pct_cols_missing > prop_required_row]
     return df
 
-
+############################################################################################
 
 #def acquire():
    # if os.path.exists('zillow.csv'):
